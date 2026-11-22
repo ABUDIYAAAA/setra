@@ -63,7 +63,7 @@ export class AuthService {
     return refreshToken;
   }
 
-  getGoogleAuthUrl() {
+  getGoogleAuthUrl(state) {
     const clientId = env.GOOGLE_CLIENT_ID || '';
     const redirectUri = env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/v1/auth/google/callback';
     const params = new URLSearchParams({
@@ -74,6 +74,10 @@ export class AuthService {
       access_type: 'offline',
       prompt: 'consent',
     });
+
+    if (state) {
+      params.set('state', state);
+    }
 
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }

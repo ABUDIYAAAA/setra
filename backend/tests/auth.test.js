@@ -19,6 +19,40 @@ describe('Google OAuth & Session Lifecycle', () => {
     expect(json.data.url).toContain('client_id=');
   });
 
+  it('GET /api/v1/auth/google/callback should redirect with tokens to deep link in state', async () => {
+    const mockGoogleUser = {
+      sub: `google_cb_${Date.now()}`,
+      email: `cb_${Date.now()}@gmail.com`,
+      name: 'Callback User',
+      picture: 'https://lh3.googleusercontent.com/pic',
+      email_verified: true,
+    };
+
+    // Mock axios.post for token exchange
+    vi.spyOn(axios, 'post').mockResolvedValueOnce({
+      data: {
+        access_token: 'mock-google-access-token',
+      },
+    });
+
+    // Mock axios.get for userinfo
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({
+      data: mockGoogleUser,
+    });
+
+    const targetDeepLink = 'app://auth/callback';
+    const callbackRes = await app.request(
+      `/api/v1/auth/google/callback?code=mock-auth-code&state=${encodeURIComponent(targetDeepLink)}`
+    );
+
+    expect(callbackRes.status).toBe(302);
+    const location = callbackRes.headers.get('location');
+    expect(location).toBeDefined();
+    expect(location).toContain('app://auth/callback');
+    expect(location).toContain('accessToken=');
+    expect(location).toContain('refreshToken=');
+  });
+
   it('POST /api/v1/auth/google should reject empty or invalid requests', async () => {
     const emptyRes = await app.request('/api/v1/auth/google', {
       method: 'POST',

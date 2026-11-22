@@ -4,8 +4,40 @@ import { authService } from './auth.service.js';
 
 export const authHandlers = {
   getGoogleUrl: catchAsync(async (c) => {
-    const url = authService.getGoogleAuthUrl();
+    const state = c.req.query('state');
+    const url = authService.getGoogleAuthUrl(state);
     return ApiResponse.success(c, { url });
+  }),
+
+  googleCallback: catchAsync(async (c) => {
+    const code = c.req.query('code');
+    const state = c.req.query('state');
+    const error = c.req.query('error');
+
+    // Decode target deep link provided in state parameter, or fallback to default scheme
+    let targetDeepLink = state ? decodeURIComponent(state) : 'app://auth/callback';
+
+    if (error || !code) {
+      const errorMsg = error || 'Authorization code missing';
+      const redirectWithErr = `${targetDeepLink}${targetDeepLink.includes('?') ? '&' : '?'}error=${encodeURIComponent(errorMsg)}`;
+      return c.redirect(redirectWithErr, 302);
+    }
+
+    try {
+      const result = await authService.authenticateWithGoogle({ code });
+      const separator = targetDeepLink.includes('?') ? '&' : '?';
+      const redirectWithTokens = `${targetDeepLink}${separator}accessToken=${encodeURIComponent(
+        result.accessToken
+      )}&refreshToken=${encodeURIComponent(result.refreshToken)}`;
+
+      return c.redirect(redirectWithTokens, 302);
+    } catch (authErr) {
+      console.error('Callback authentication error:', authErr);
+      const redirectWithErr = `${targetDeepLink}${targetDeepLink.includes('?') ? '&' : '?'}error=${encodeURIComponent(
+        authErr.message || 'Authentication failed'
+      )}`;
+      return c.redirect(redirectWithErr, 302);
+    }
   }),
 
   googleAuth: catchAsync(async (c) => {

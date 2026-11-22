@@ -1,4 +1,4 @@
-import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { authHandlers } from './auth.handlers.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 import {
@@ -20,6 +20,11 @@ export const googleUrlRoute = createRoute({
   summary: 'Get Google OAuth Consent URL',
   description: 'Returns the Google OAuth 2.0 authorization URL to redirect users for consent.',
   tags: ['Authentication'],
+  request: {
+    query: z.object({
+      state: z.string().optional().openapi({ description: 'Optional state parameter (e.g. mobile deep link)' }),
+    }),
+  },
   responses: {
     200: {
       description: 'Google OAuth consent URL',
@@ -28,6 +33,26 @@ export const googleUrlRoute = createRoute({
           schema: GoogleAuthUrlResponseSchema,
         },
       },
+    },
+  },
+});
+
+export const googleCallbackRoute = createRoute({
+  method: 'get',
+  path: '/google/callback',
+  summary: 'Google OAuth Redirect Callback',
+  description: 'Endpoint Google redirects to after consent. Exchanges code with Google and redirects back to mobile app deep link with JWT tokens.',
+  tags: ['Authentication'],
+  request: {
+    query: z.object({
+      code: z.string().optional(),
+      state: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  },
+  responses: {
+    302: {
+      description: 'Redirects to mobile app with tokens in URL parameters',
     },
   },
 });
@@ -167,6 +192,7 @@ export const meRoute = createRoute({
 
 // Register routes
 authRouter.openapi(googleUrlRoute, authHandlers.getGoogleUrl);
+authRouter.openapi(googleCallbackRoute, authHandlers.googleCallback);
 authRouter.openapi(googleAuthRoute, authHandlers.googleAuth);
 authRouter.openapi(refreshRoute, authHandlers.refresh);
 authRouter.openapi(logoutRoute, authHandlers.logout);

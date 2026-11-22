@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { cors } from 'hono/cors';
 import { apiReference } from '@scalar/hono-api-reference';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { exerciseRouter } from './modules/exercises/exercise.routes.js';
@@ -18,6 +19,9 @@ export function createApp() {
       }
     },
   });
+
+  // Enable CORS for all routes and clients
+  app.use('*', cors());
 
   // Global Error Handler
   app.onError(errorHandler);
