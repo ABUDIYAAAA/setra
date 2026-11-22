@@ -29,6 +29,18 @@ export function useCreateRoutine() {
   });
 }
 
+export function useUpdateRoutine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateRoutineInput> }) =>
+      routinesApi.updateRoutine(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ROUTINES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...ROUTINES_QUERY_KEY, variables.id] });
+    },
+  });
+}
+
 export function useDuplicateRoutine() {
   const queryClient = useQueryClient();
   return useMutation({

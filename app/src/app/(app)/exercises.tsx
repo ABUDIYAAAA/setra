@@ -12,8 +12,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useExercises } from '../../hooks/useExercises';
-import { Exercise } from '../../api/exercises.api';
+import { useExercises } from '@/hooks/useExercises';
+import { Exercise } from '@/api/exercises.api';
 
 const EQUIPMENT_FILTERS = [
   { label: 'All', value: undefined },

@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 import { apiReference } from '@scalar/hono-api-reference';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { exerciseRouter } from './modules/exercises/exercise.routes.js';
@@ -20,6 +21,11 @@ export function createApp() {
       }
     },
   });
+
+  // HTTP Request Logging (active outside tests)
+  if (process.env.NODE_ENV !== 'test') {
+    app.use('*', logger());
+  }
 
   // Enable CORS for all routes and clients
   app.use('*', cors());
