@@ -5,12 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   SafeAreaView,
   StatusBar,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../api/auth.api';
 
@@ -19,12 +19,14 @@ WebBrowser.maybeCompleteAuthSession();
 export default function LoginScreen() {
   const { loginWithGoogle, setSessionTokens } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);
+    setErrorMessage(null);
+
     try {
       const redirectUrl = Linking.createURL('/auth/callback');
-      // Pass redirectUrl as state so backend callback redirects directly back into mobile app
       const googleAuthUrl = await authApi.getGoogleUrl(redirectUrl);
 
       const result = await WebBrowser.openAuthSessionAsync(googleAuthUrl, redirectUrl);
@@ -50,30 +52,16 @@ export default function LoginScreen() {
         }
       }
 
-      if (result.type === 'cancel') {
-        // User cancelled popup
+      if (result.type === 'cancel' || result.type === 'dismiss') {
         return;
       }
-
-      // If in dev simulator without active Google OAuth client ID, offer dev fallback
-      Alert.alert(
-        'Google OAuth Notice',
-        'To complete live Google Sign-In, ensure your GOOGLE_CLIENT_ID is configured in the backend. Would you like to sign in with a demo Google account for testing?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign in with Demo Account',
-            onPress: async () => {
-              await loginWithGoogle({
-                idToken: 'mock-valid-google-id-token',
-              });
-            },
-          },
-        ]
-      );
     } catch (err: any) {
       console.error('Sign-in error:', err);
-      Alert.alert('Sign-In Error', err?.message || 'Failed to authenticate with Google');
+      setErrorMessage(
+        err?.response?.data?.error?.message ||
+          err?.message ||
+          'Failed to complete Google Sign-In. Please try again.'
+      );
     } finally {
       setIsSigningIn(false);
     }
@@ -82,41 +70,70 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+
       <View style={styles.content}>
-        {/* Brand & Hero */}
-        <View style={styles.heroSection}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>SETRA FITNESS</Text>
+        {/* Top Branding */}
+        <View style={styles.brandContainer}>
+          <View style={styles.logoBadge}>
+            <Ionicons name="barbell-outline" size={26} color="#6366F1" />
           </View>
-          <Text style={styles.title}>Track. Train.{"\n"}Transform.</Text>
-          <Text style={styles.subtitle}>
-            Your comprehensive workout tracker with 700+ exercises, progressive overload, and intelligent analytics.
-          </Text>
+          <Text style={styles.brandName}>SETRA</Text>
         </View>
 
-        {/* Google-Only Action Area */}
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text style={styles.headline}>Built for{"\n"}progression.</Text>
+          <Text style={styles.subheadline}>
+            Obsessive workout tracking, progressive overload logging, and 700+ exercises at your fingertips.
+          </Text>
+
+          {/* Value Props */}
+          <View style={styles.featuresList}>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Full exercise catalog with technique guides</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Custom routines, rep ranges & cardio timers</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Zero-friction set logging and auto rest timers</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Action Section */}
         <View style={styles.actionSection}>
+          {errorMessage ? (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={18} color="#F87171" style={{ marginRight: 8 }} />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
           <TouchableOpacity
-            style={styles.googleButton}
+            style={[styles.googleButton, isSigningIn && styles.googleButtonDisabled]}
             onPress={handleGoogleSignIn}
             disabled={isSigningIn}
             activeOpacity={0.85}
           >
             {isSigningIn ? (
-              <ActivityIndicator color="#0F172A" />
+              <View style={styles.loadingRow}>
+                <ActivityIndicator size="small" color="#0F172A" />
+                <Text style={styles.loadingButtonText}>Connecting to Google...</Text>
+              </View>
             ) : (
               <View style={styles.googleButtonContent}>
-                {/* Minimalist Google 'G' icon circle */}
-                <View style={styles.googleIconCircle}>
-                  <Text style={styles.googleIconText}>G</Text>
-                </View>
+                <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.googleIcon} />
                 <Text style={styles.googleButtonText}>Continue with Google</Text>
               </View>
             )}
           </TouchableOpacity>
 
           <Text style={styles.disclaimerText}>
-            By continuing, you agree to our Terms of Service & Privacy Policy.
+            Secure authentication powered by Google OAuth
           </Text>
         </View>
       </View>
@@ -127,89 +144,133 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#07090E',
   },
   content: {
     flex: 1,
     paddingHorizontal: 28,
     justifyContent: 'space-between',
-    paddingVertical: 40,
+    paddingTop: 20,
+    paddingBottom: 32,
+  },
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logoBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 3,
   },
   heroSection: {
-    marginTop: 60,
+    marginTop: -20,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    borderColor: 'rgba(99, 102, 241, 0.4)',
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 20,
-  },
-  badgeText: {
-    color: '#818CF8',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  title: {
+  headline: {
     fontSize: 44,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: -1,
     lineHeight: 50,
+    letterSpacing: -1,
     marginBottom: 16,
   },
-  subtitle: {
+  subheadline: {
     fontSize: 16,
     color: '#94A3B8',
     lineHeight: 24,
+    marginBottom: 32,
+  },
+  featuresList: {
+    gap: 14,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  featureDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#6366F1',
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#CBD5E1',
+    fontWeight: '500',
   },
   actionSection: {
-    marginBottom: 20,
+    gap: 14,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#FCA5A5',
+    lineHeight: 18,
   },
   googleButton: {
     backgroundColor: '#FFFFFF',
-    height: 56,
+    height: 54,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
     elevation: 4,
+  },
+  googleButtonDisabled: {
+    opacity: 0.8,
   },
   googleButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  googleIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#EA4335',
-    alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  googleIconText: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 16,
+  googleIcon: {
+    marginRight: 12,
   },
   googleButtonText: {
     color: '#0F172A',
     fontSize: 16,
     fontWeight: '700',
   },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  loadingButtonText: {
+    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   disclaimerText: {
     textAlign: 'center',
     color: '#64748B',
     fontSize: 12,
-    marginTop: 18,
-    lineHeight: 18,
+    marginTop: 4,
   },
 });

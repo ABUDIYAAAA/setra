@@ -8,28 +8,31 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
+  ScrollView,
+  StatusBar,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useExercises } from '../../hooks/useExercises';
 import { Exercise } from '../../api/exercises.api';
 
 const EQUIPMENT_FILTERS = [
   { label: 'All', value: undefined },
-  { label: 'Dumbbell', value: 'dumbbell' },
   { label: 'Barbell', value: 'barbell' },
+  { label: 'Dumbbell', value: 'dumbbell' },
   { label: 'Cable', value: 'cable' },
-  { label: 'Bodyweight', value: 'bodyweight' },
   { label: 'Machine', value: 'machine_pin_selected' },
+  { label: 'Bodyweight', value: 'bodyweight' },
 ];
 
 export default function ExercisesScreen() {
   const [search, setSearch] = useState('');
   const [selectedEquipment, setSelectedEquipment] = useState<string | undefined>(undefined);
 
-  // TanStack Query with aggressive caching
+  // TanStack Query with 30-min cache
   const { data, isLoading, isError, refetch } = useExercises({
     search: search.trim() || undefined,
     equipment: selectedEquipment,
-    limit: 50,
+    limit: 60,
   });
 
   const exercises = data?.data || [];
@@ -43,10 +46,15 @@ export default function ExercisesScreen() {
         </View>
       </View>
 
-      <Text style={styles.bodyPartText}>
-        Target: <Text style={styles.boldText}>{item.bodyPart.toUpperCase()}</Text> •{' '}
-        {item.difficulty}
-      </Text>
+      <View style={styles.metaRow}>
+        <View style={styles.metaChip}>
+          <Text style={styles.metaChipText}>{item.bodyPart.toUpperCase()}</Text>
+        </View>
+        <Text style={styles.metaDot}>•</Text>
+        <Text style={styles.metaText}>{item.category}</Text>
+        <Text style={styles.metaDot}>•</Text>
+        <Text style={styles.metaText}>{item.difficulty}</Text>
+      </View>
 
       {item.instructions && item.instructions.length > 0 && (
         <Text style={styles.instructionPreview} numberOfLines={2}>
@@ -58,47 +66,65 @@ export default function ExercisesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Search Input */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search 700+ exercises..."
-          placeholderTextColor="#64748B"
-          value={search}
-          onChangeText={setSearch}
-          clearButtonMode="while-editing"
-        />
+      <StatusBar barStyle="light-content" />
+
+      {/* Search Input Bar */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color="#64748B" style={{ marginRight: 10 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search 700+ exercises..."
+            placeholderTextColor="#64748B"
+            value={search}
+            onChangeText={setSearch}
+            clearButtonMode="while-editing"
+            autoCapitalize="none"
+          />
+          {search ? (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={18} color="#64748B" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
 
-      {/* Equipment Filter Chips */}
-      <View style={styles.chipScroll}>
-        {EQUIPMENT_FILTERS.map((chip) => {
-          const isSelected = selectedEquipment === chip.value;
-          return (
-            <TouchableOpacity
-              key={chip.label}
-              style={[styles.chip, isSelected && styles.chipSelected]}
-              onPress={() => setSelectedEquipment(chip.value)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      {/* Horizontal Equipment Filter Chips */}
+      <View style={styles.filterSection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipScroll}
+        >
+          {EQUIPMENT_FILTERS.map((chip) => {
+            const isSelected = selectedEquipment === chip.value;
+            return (
+              <TouchableOpacity
+                key={chip.label}
+                style={[styles.chip, isSelected && styles.chipSelected]}
+                onPress={() => setSelectedEquipment(chip.value)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Exercise List */}
       {isLoading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color="#6366F1" />
-          <Text style={styles.loadingText}>Loading exercise catalog...</Text>
+          <Text style={styles.loadingText}>Loading library...</Text>
         </View>
       ) : isError ? (
         <View style={styles.centerBox}>
-          <Text style={styles.errorText}>Failed to load exercises</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+          <Ionicons name="alert-circle-outline" size={36} color="#F87171" style={{ marginBottom: 12 }} />
+          <Text style={styles.errorText}>Could not load exercise library</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()} activeOpacity={0.8}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -108,9 +134,11 @@ export default function ExercisesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderExercise}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>No exercises match your filter</Text>
+              <Ionicons name="search-outline" size={32} color="#475569" style={{ marginBottom: 8 }} />
+              <Text style={styles.emptyText}>No exercises match your search</Text>
             </View>
           }
         />
@@ -122,37 +150,42 @@ export default function ExercisesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#07090E',
+  },
+  searchSection: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   searchContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  searchInput: {
-    backgroundColor: '#131B2E',
-    color: '#FFFFFF',
-    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 14,
-    paddingHorizontal: 16,
-    fontSize: 15,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 14,
+    height: 46,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 15,
+  },
+  filterSection: {
+    paddingVertical: 6,
   },
   chipScroll: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 8,
     gap: 8,
-    flexWrap: 'wrap',
   },
   chip: {
-    backgroundColor: '#131B2E',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   chipSelected: {
     backgroundColor: '#6366F1',
@@ -169,21 +202,22 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 12,
+    paddingTop: 8,
+    paddingBottom: 32,
+    gap: 10,
   },
   card: {
-    backgroundColor: '#131B2E',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 6,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
   },
   exerciseName: {
     color: '#FFFFFF',
@@ -193,9 +227,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   tagBadge: {
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 8,
   },
   tagBadgeText: {
@@ -203,24 +237,43 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  bodyPartText: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginBottom: 8,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  boldText: {
-    color: '#E2E8F0',
-    fontWeight: '700',
+  metaChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  metaChipText: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  metaDot: {
+    color: '#475569',
+    fontSize: 12,
+  },
+  metaText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    textTransform: 'capitalize',
   },
   instructionPreview: {
     color: '#64748B',
     fontSize: 12,
     lineHeight: 18,
+    marginTop: 4,
   },
   centerBox: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   loadingText: {
     color: '#94A3B8',
@@ -230,17 +283,19 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#F87171',
     fontSize: 15,
-    marginBottom: 12,
+    marginBottom: 14,
+    textAlign: 'center',
   },
   retryButton: {
     backgroundColor: '#6366F1',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 10,
   },
   retryText: {
     color: '#FFFFFF',
     fontWeight: '700',
+    fontSize: 14,
   },
   emptyBox: {
     paddingTop: 60,
@@ -248,6 +303,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: '#64748B',
-    fontSize: 15,
+    fontSize: 14,
   },
 });
