@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
 export default function HomeScreen() {
@@ -26,7 +27,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.userInfo}>
             <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.userName}>{firstName} 💪</Text>
+            <Text style={styles.userName}>{firstName}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
           </View>
 
@@ -65,7 +66,7 @@ export default function HomeScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.menuIconContainer}>
-            <Text style={styles.menuIconText}>📚</Text>
+            <Ionicons name="barbell-outline" size={24} color="#818CF8" />
           </View>
           <View style={styles.menuTextContainer}>
             <Text style={styles.menuTitle}>Exercise Library</Text>
@@ -73,7 +74,7 @@ export default function HomeScreen() {
               700+ exercises across dumbbells, barbells, cables, and machines
             </Text>
           </View>
-          <Text style={styles.chevron}>›</Text>
+          <Ionicons name="chevron-forward" size={20} color="#64748B" />
         </TouchableOpacity>
 
         {/* Weekly Stats Overview */}
@@ -94,6 +95,7 @@ export default function HomeScreen() {
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={logout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={18} color="#F87171" style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -279,6 +281,8 @@ const styles = StyleSheet.create({
   logoutButton: {
     paddingVertical: 14,
     borderRadius: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
