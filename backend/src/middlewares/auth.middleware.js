@@ -16,6 +16,7 @@ export async function authMiddleware(c, next) {
   try {
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
     c.set('user', decoded);
+    c.set('userId', decoded.sub || decoded.id);
     await next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {

@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useRoutines, useDuplicateRoutine, useDeleteRoutine } from '@/hooks/useRoutines';
+import { useActiveWorkout, useStartWorkout } from '@/hooks/useWorkouts';
 import { useRoutineDraft } from '@/context/RoutineDraftContext';
 import { RoutineSummary } from '@/api/routines.api';
 import { RoutineActionSheet } from '@/components/RoutineActionSheet';
@@ -26,6 +27,8 @@ export default function WorkoutScreen() {
   const { data: routines, isLoading, isError, refetch, isRefetching } = useRoutines();
   const duplicateRoutineMutation = useDuplicateRoutine();
   const deleteRoutineMutation = useDeleteRoutine();
+  const { data: activeWorkout } = useActiveWorkout();
+  const startWorkoutMutation = useStartWorkout();
 
   const [activeActionRoutine, setActiveActionRoutine] = useState<RoutineSummary | null>(null);
 
@@ -48,6 +51,24 @@ export default function WorkoutScreen() {
   const handleNewRoutine = () => {
     resetDraft();
     router.push('/new-routine');
+  };
+
+  const handleStartRoutine = async (routineId: string) => {
+    try {
+      await startWorkoutMutation.mutateAsync({ routineId });
+      router.push('/active-workout');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not start routine');
+    }
+  };
+
+  const handleStartEmptyWorkout = async () => {
+    try {
+      await startWorkoutMutation.mutateAsync({ title: 'Quick Workout' });
+      router.push('/active-workout');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not start workout');
+    }
   };
 
   const handleDuplicate = async (id: string, title: string) => {
@@ -133,7 +154,7 @@ export default function WorkoutScreen() {
         style={styles.startBtn}
         onPress={(e) => {
           e.stopPropagation();
-          // Action for live workout with this routine
+          handleStartRoutine(item.id);
         }}
         activeOpacity={0.85}
       >
@@ -146,6 +167,32 @@ export default function WorkoutScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+
+      {/* Active Workout Resumed Banner (if any is running) */}
+      {activeWorkout && (
+        <View style={styles.activeBannerSection}>
+          <TouchableOpacity
+            style={styles.activeWorkoutBanner}
+            onPress={() => router.push('/active-workout')}
+            activeOpacity={0.85}
+          >
+            <View style={{ flex: 1 }}>
+              <View style={styles.activeTagRow}>
+                <View style={styles.pulseDot} />
+                <Text style={styles.activeTagText}>IN PROGRESS</Text>
+              </View>
+              <Text style={styles.activeWorkoutTitle} numberOfLines={1}>
+                {activeWorkout.title}
+              </Text>
+            </View>
+
+            <View style={styles.resumeBtn}>
+              <Text style={styles.resumeBtnText}>Resume</Text>
+              <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* 1. Search Bar at Top */}
       <View style={styles.searchSection}>
@@ -168,8 +215,17 @@ export default function WorkoutScreen() {
         </View>
       </View>
 
-      {/* 2. New Routine Button Below Search Bar */}
+      {/* 2. Action Buttons (Quick Workout & New Routine) */}
       <View style={styles.buttonSection}>
+        <TouchableOpacity
+          style={styles.quickStartButton}
+          onPress={handleStartEmptyWorkout}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="flash" size={18} color="#818CF8" style={{ marginRight: 6 }} />
+          <Text style={styles.quickStartText}>Quick Workout</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.newRoutineButton}
           onPress={handleNewRoutine}
@@ -238,6 +294,11 @@ export default function WorkoutScreen() {
         visible={Boolean(activeActionRoutine)}
         onClose={() => setActiveActionRoutine(null)}
         routineTitle={activeActionRoutine?.title || 'Routine'}
+        onStartWorkout={() => {
+          if (activeActionRoutine) {
+            handleStartRoutine(activeActionRoutine.id);
+          }
+        }}
         onEdit={() => {
           if (activeActionRoutine) {
             router.push({
@@ -266,6 +327,63 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#07090E',
   },
+  activeBannerSection: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  activeWorkoutBanner: {
+    backgroundColor: '#0F1522',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#6366F1',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  activeTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  pulseDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  activeTagText: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  activeWorkoutTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  resumeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    gap: 4,
+    marginLeft: 12,
+  },
+  resumeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   searchSection: {
     paddingHorizontal: 20,
     paddingTop: 12,
@@ -289,13 +407,33 @@ const styles = StyleSheet.create({
   buttonSection: {
     paddingHorizontal: 20,
     paddingVertical: 8,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickStartButton: {
+    flex: 1,
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  quickStartText: {
+    color: '#A5B4FC',
+    fontSize: 14,
+    fontWeight: '700',
   },
   newRoutineButton: {
+    flex: 1,
     backgroundColor: '#6366F1',
     height: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
     shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,

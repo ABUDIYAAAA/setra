@@ -21,6 +21,7 @@ import {
   useDeleteRoutine,
   useDuplicateRoutine,
 } from '@/hooks/useRoutines';
+import { useStartWorkout } from '@/hooks/useWorkouts';
 import { RoutineActionSheet } from '@/components/RoutineActionSheet';
 import { ExerciseThumbnail } from '@/components/ExerciseThumbnail';
 import { RestTimerModal } from '@/components/RestTimerModal';
@@ -55,9 +56,20 @@ export default function NewRoutineScreen() {
   const updateRoutineMutation = useUpdateRoutine();
   const deleteRoutineMutation = useDeleteRoutine();
   const duplicateRoutineMutation = useDuplicateRoutine();
+  const startWorkoutMutation = useStartWorkout();
   const { data: existingRoutine, isLoading: isLoadingExisting } = useRoutineDetail(routineId);
 
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleStartWorkout = async () => {
+    if (!routineId) return;
+    try {
+      await startWorkoutMutation.mutateAsync({ routineId });
+      router.push('/active-workout');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not start workout');
+    }
+  };
 
   // When editing an existing routine, populate the draft
   useEffect(() => {
@@ -442,7 +454,11 @@ export default function NewRoutineScreen() {
               </TouchableOpacity>
             ) : (
               /* Start Workout Button in details view */
-              <TouchableOpacity style={styles.startWorkoutBtn} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={styles.startWorkoutBtn}
+                onPress={handleStartWorkout}
+                activeOpacity={0.85}
+              >
                 <Ionicons name="play" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
                 <Text style={styles.startWorkoutText}>Start Workout</Text>
               </TouchableOpacity>
@@ -456,6 +472,7 @@ export default function NewRoutineScreen() {
         visible={showMenu}
         onClose={() => setShowMenu(false)}
         routineTitle={title || 'Routine'}
+        onStartWorkout={handleStartWorkout}
         onEdit={() => {
           setIsEditing(true);
         }}

@@ -14,6 +14,7 @@ interface RoutineActionSheetProps {
   visible: boolean;
   onClose: () => void;
   routineTitle: string;
+  onStartWorkout?: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -23,6 +24,7 @@ export const RoutineActionSheet: React.FC<RoutineActionSheetProps> = ({
   visible,
   onClose,
   routineTitle,
+  onStartWorkout,
   onEdit,
   onDuplicate,
   onDelete,
@@ -50,6 +52,26 @@ export const RoutineActionSheet: React.FC<RoutineActionSheetProps> = ({
 
               {/* Action Buttons */}
               <View style={styles.actionsList}>
+                {/* 0. Start Workout (if provided) */}
+                {onStartWorkout && (
+                  <TouchableOpacity
+                    style={[styles.actionRow, styles.startActionRow]}
+                    onPress={() => {
+                      onClose();
+                      onStartWorkout();
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.iconCircle, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
+                      <Ionicons name="play" size={18} color="#818CF8" />
+                    </View>
+                    <Text style={[styles.actionText, { color: '#FFFFFF', fontWeight: '700' }]}>
+                      Start Workout
+                    </Text>
+                    <Ionicons name="chevron-forward" size={18} color="#818CF8" />
+                  </TouchableOpacity>
+                )}
+
                 {/* 1. Edit Routine */}
                 <TouchableOpacity
                   style={styles.actionRow}
@@ -158,6 +180,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  startActionRow: {
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    borderColor: 'rgba(99, 102, 241, 0.25)',
   },
   deleteRow: {
     backgroundColor: 'rgba(239, 68, 68, 0.06)',

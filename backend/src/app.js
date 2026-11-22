@@ -8,6 +8,7 @@ import { apiReference } from '@scalar/hono-api-reference';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { exerciseRouter } from './modules/exercises/exercise.routes.js';
 import { routineRouter } from './modules/routines/routine.routes.js';
+import { workoutRouter } from './modules/workouts/workout.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { ApiResponse } from './utils/apiResponse.js';
 
@@ -53,6 +54,9 @@ export function createApp() {
 
   // Mount Routines Module
   app.route('/api/v1/routines', routineRouter);
+
+  // Mount Workouts Module
+  app.route('/api/v1/workouts', workoutRouter);
 
   // OpenAPI Specification endpoint
   app.doc('/openapi.json', {
