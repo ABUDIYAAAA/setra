@@ -2,7 +2,12 @@ import crypto from 'node:crypto';
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
-import { AppError } from '../../utils/errors.js';
+import {
+  AppError,
+  BadRequestError,
+  UnauthorizedError,
+  NotFoundError,
+} from '../../utils/errors.js';
 import { hashToken } from '../../utils/crypto.js';
 import { authRepository } from './auth.repository.js';
 
@@ -59,7 +64,7 @@ export class AuthService {
   async register({ name, email, password }) {
     const existingUser = await authRepository.findUserByEmail(email);
     if (existingUser) {
-      throw new AppError('Email is already registered', 400, 'EMAIL_ALREADY_EXISTS');
+      throw new BadRequestError('Email is already registered', 'EMAIL_ALREADY_EXISTS');
     }
 
     const passwordHash = await argon2.hash(password);
@@ -82,12 +87,12 @@ export class AuthService {
   async login({ email, password }) {
     const user = await authRepository.findUserByEmail(email);
     if (!user) {
-      throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+      throw new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS');
     }
 
     const isValidPassword = await argon2.verify(user.passwordHash, password);
     if (!isValidPassword) {
-      throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+      throw new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS');
     }
 
     const accessToken = this.generateAccessToken(user);
@@ -105,14 +110,14 @@ export class AuthService {
     try {
       decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET);
     } catch {
-      throw new AppError('Invalid or expired refresh token', 401, 'INVALID_REFRESH_TOKEN');
+      throw new UnauthorizedError('Invalid or expired refresh token', 'INVALID_REFRESH_TOKEN');
     }
 
     const tokenHash = hashToken(refreshToken);
     const tokenRecord = await authRepository.findActiveRefreshToken(decoded.sub, tokenHash);
 
     if (!tokenRecord) {
-      throw new AppError('Refresh token revoked or not found', 401, 'TOKEN_REVOKED');
+      throw new UnauthorizedError('Refresh token revoked or not found', 'TOKEN_REVOKED');
     }
 
     // Token rotation: Revoke old token
@@ -120,7 +125,7 @@ export class AuthService {
 
     const user = await authRepository.findUserById(decoded.sub);
     if (!user) {
-      throw new AppError('User no longer exists', 401, 'USER_NOT_FOUND');
+      throw new NotFoundError('User no longer exists', 'USER_NOT_FOUND');
     }
 
     const newAccessToken = this.generateAccessToken(user);
@@ -143,7 +148,7 @@ export class AuthService {
   async getProfile(userId) {
     const user = await authRepository.findUserById(userId);
     if (!user) {
-      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+      throw new NotFoundError('User not found', 'USER_NOT_FOUND');
     }
     return {
       user: this.formatUser(user),
@@ -153,12 +158,12 @@ export class AuthService {
   async changePassword({ userId, currentPassword, newPassword }) {
     const user = await authRepository.findUserById(userId);
     if (!user) {
-      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+      throw new NotFoundError('User not found', 'USER_NOT_FOUND');
     }
 
     const isValidPassword = await argon2.verify(user.passwordHash, currentPassword);
     if (!isValidPassword) {
-      throw new AppError('Current password is incorrect', 400, 'INVALID_CURRENT_PASSWORD');
+      throw new BadRequestError('Current password is incorrect', 'INVALID_CURRENT_PASSWORD');
     }
 
     const newPasswordHash = await argon2.hash(newPassword);

@@ -2,22 +2,18 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { apiReference } from '@scalar/hono-api-reference';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import { ApiResponse } from './utils/apiResponse.js';
 
 export function createApp() {
   const app = new OpenAPIHono({
     defaultHook: (result, c) => {
       if (!result.success) {
-        return c.json(
-          {
-            success: false,
-            error: {
-              message: 'Validation failed',
-              code: 'VALIDATION_ERROR',
-              details: result.error.issues,
-            },
-          },
-          400
-        );
+        return ApiResponse.error(c, {
+          message: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: result.error.issues,
+          statusCode: 400,
+        });
       }
     },
   });

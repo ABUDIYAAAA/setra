@@ -1,37 +1,39 @@
+import { catchAsync } from '../../utils/catchAsync.js';
+import { ApiResponse } from '../../utils/apiResponse.js';
 import { authService } from './auth.service.js';
 
 export const authHandlers = {
-  async register(c) {
+  register: catchAsync(async (c) => {
     const body = c.req.valid('json');
     const result = await authService.register(body);
-    return c.json({ success: true, data: result }, 201);
-  },
+    return ApiResponse.created(c, result);
+  }),
 
-  async login(c) {
+  login: catchAsync(async (c) => {
     const body = c.req.valid('json');
     const result = await authService.login(body);
-    return c.json({ success: true, data: result }, 200);
-  },
+    return ApiResponse.success(c, result);
+  }),
 
-  async refresh(c) {
+  refresh: catchAsync(async (c) => {
     const body = c.req.valid('json');
     const result = await authService.refreshTokens(body);
-    return c.json({ success: true, data: result }, 200);
-  },
+    return ApiResponse.success(c, result);
+  }),
 
-  async logout(c) {
+  logout: catchAsync(async (c) => {
     const body = c.req.valid('json');
     const result = await authService.logout(body);
-    return c.json({ success: true, message: result.message }, 200);
-  },
+    return ApiResponse.message(c, result.message);
+  }),
 
-  async getMe(c) {
+  getMe: catchAsync(async (c) => {
     const userPayload = c.get('user');
     const result = await authService.getProfile(userPayload.sub);
-    return c.json({ success: true, data: result }, 200);
-  },
+    return ApiResponse.success(c, result);
+  }),
 
-  async changePassword(c) {
+  changePassword: catchAsync(async (c) => {
     const userPayload = c.get('user');
     const body = c.req.valid('json');
     const result = await authService.changePassword({
@@ -39,6 +41,6 @@ export const authHandlers = {
       currentPassword: body.currentPassword,
       newPassword: body.newPassword,
     });
-    return c.json({ success: true, message: result.message }, 200);
-  },
+    return ApiResponse.message(c, result.message);
+  }),
 };
