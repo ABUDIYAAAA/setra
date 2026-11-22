@@ -1,9 +1,8 @@
 import crypto from 'node:crypto';
-import argon2 from 'argon2';
+import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 import {
-  AppError,
   BadRequestError,
   UnauthorizedError,
   NotFoundError,
@@ -15,8 +14,10 @@ export class AuthService {
   formatUser(user) {
     return {
       id: user.id,
+      googleId: user.googleId || null,
       name: user.name,
       email: user.email,
+      avatarUrl: user.avatarUrl || null,
       createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
       updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt,
     };
@@ -26,6 +27,7 @@ export class AuthService {
     return jwt.sign(
       {
         sub: user.id,
+        googleId: user.googleId,
         email: user.email,
         name: user.name,
         jti: crypto.randomUUID(),
@@ -61,47 +63,130 @@ export class AuthService {
     return refreshToken;
   }
 
-  async register({ name, email, password }) {
-    const existingUser = await authRepository.findUserByEmail(email);
-    if (existingUser) {
-      throw new BadRequestError('Email is already registered', 'EMAIL_ALREADY_EXISTS');
-    }
-
-    const passwordHash = await argon2.hash(password);
-    const newUser = await authRepository.createUser({
-      name,
-      email,
-      passwordHash,
+  getGoogleAuthUrl() {
+    const clientId = env.GOOGLE_CLIENT_ID || '';
+    const redirectUri = env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/v1/auth/google/callback';
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      access_type: 'offline',
+      prompt: 'consent',
     });
 
-    const accessToken = this.generateAccessToken(newUser);
-    const refreshToken = await this.createAndSaveRefreshToken(newUser);
-
-    return {
-      user: this.formatUser(newUser),
-      accessToken,
-      refreshToken,
-    };
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
-  async login({ email, password }) {
-    const user = await authRepository.findUserByEmail(email);
+  async verifyGoogleCredentials({ idToken, accessToken, code }) {
+    try {
+      // 1. If ID token provided (Direct client-side authentication e.g. One Tap or Mobile SDK)
+      if (idToken) {
+        const res = await axios.get('https://oauth2.googleapis.com/tokeninfo', {
+          params: { id_token: idToken },
+        });
+        const data = res.data;
+        if (!data || !data.sub || !data.email) {
+          throw new UnauthorizedError('Invalid Google ID token payload', 'INVALID_GOOGLE_TOKEN');
+        }
+        return {
+          googleId: data.sub,
+          email: data.email,
+          name: data.name || data.email.split('@')[0],
+          avatarUrl: data.picture || null,
+        };
+      }
+
+      // 2. If Access token provided (Bearer token from client)
+      if (accessToken) {
+        const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const data = res.data;
+        if (!data || !data.sub || !data.email) {
+          throw new UnauthorizedError('Invalid Google access token payload', 'INVALID_GOOGLE_TOKEN');
+        }
+        return {
+          googleId: data.sub,
+          email: data.email,
+          name: data.name || data.email.split('@')[0],
+          avatarUrl: data.picture || null,
+        };
+      }
+
+      // 3. If Authorization code provided (Web redirect flow)
+      if (code) {
+        const tokenRes = await axios.post(
+          'https://oauth2.googleapis.com/token',
+          new URLSearchParams({
+            code,
+            client_id: env.GOOGLE_CLIENT_ID || '',
+            client_secret: env.GOOGLE_CLIENT_SECRET || '',
+            redirect_uri: env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/v1/auth/google/callback',
+            grant_type: 'authorization_code',
+          }).toString(),
+          {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          }
+        );
+
+        const { id_token, access_token } = tokenRes.data;
+        if (id_token) {
+          return this.verifyGoogleCredentials({ idToken: id_token });
+        }
+        if (access_token) {
+          return this.verifyGoogleCredentials({ accessToken: access_token });
+        }
+        throw new UnauthorizedError('Failed to retrieve tokens from Google code exchange', 'GOOGLE_OAUTH_FAILED');
+      }
+
+      throw new BadRequestError('Must provide idToken, accessToken, or code', 'MISSING_GOOGLE_CREDENTIALS');
+    } catch (err) {
+      if (err instanceof BadRequestError || err instanceof UnauthorizedError) {
+        throw err;
+      }
+      const message = err.response?.data?.error_description || err.response?.data?.error || err.message;
+      throw new UnauthorizedError(`Google authentication failed: ${message}`, 'GOOGLE_AUTH_FAILED');
+    }
+  }
+
+  async authenticateWithGoogle({ idToken, accessToken, code }) {
+    const googleUser = await this.verifyGoogleCredentials({ idToken, accessToken, code });
+
+    // Find user by googleId or email
+    let user = await authRepository.findUserByGoogleId(googleUser.googleId);
+
     if (!user) {
-      throw new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS');
+      user = await authRepository.findUserByEmail(googleUser.email);
+      if (user) {
+        // Link existing user to Google ID
+        user = await authRepository.updateUser(user.id, {
+          googleId: googleUser.googleId,
+          avatarUrl: googleUser.avatarUrl || user.avatarUrl,
+        });
+      } else {
+        // Create new user from Google profile
+        user = await authRepository.createUser({
+          googleId: googleUser.googleId,
+          email: googleUser.email,
+          name: googleUser.name,
+          avatarUrl: googleUser.avatarUrl,
+        });
+      }
+    } else if (googleUser.avatarUrl && user.avatarUrl !== googleUser.avatarUrl) {
+      // Update avatar if changed
+      user = await authRepository.updateUser(user.id, {
+        avatarUrl: googleUser.avatarUrl,
+      });
     }
 
-    const isValidPassword = await argon2.verify(user.passwordHash, password);
-    if (!isValidPassword) {
-      throw new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS');
-    }
-
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = await this.createAndSaveRefreshToken(user);
+    const setraAccessToken = this.generateAccessToken(user);
+    const setraRefreshToken = await this.createAndSaveRefreshToken(user);
 
     return {
       user: this.formatUser(user),
-      accessToken,
-      refreshToken,
+      accessToken: setraAccessToken,
+      refreshToken: setraRefreshToken,
     };
   }
 
@@ -153,26 +238,6 @@ export class AuthService {
     return {
       user: this.formatUser(user),
     };
-  }
-
-  async changePassword({ userId, currentPassword, newPassword }) {
-    const user = await authRepository.findUserById(userId);
-    if (!user) {
-      throw new NotFoundError('User not found', 'USER_NOT_FOUND');
-    }
-
-    const isValidPassword = await argon2.verify(user.passwordHash, currentPassword);
-    if (!isValidPassword) {
-      throw new BadRequestError('Current password is incorrect', 'INVALID_CURRENT_PASSWORD');
-    }
-
-    const newPasswordHash = await argon2.hash(newPassword);
-    await authRepository.updateUserPassword(userId, newPasswordHash);
-
-    // Revoke all existing refresh tokens for security
-    await authRepository.revokeAllUserRefreshTokens(userId);
-
-    return { message: 'Password changed successfully. Please log in again.' };
   }
 }
 

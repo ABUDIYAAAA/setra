@@ -1,38 +1,48 @@
 import { z } from '@hono/zod-openapi';
 
-export const RegisterRequestSchema = z
+export const GoogleAuthRequestSchema = z
   .object({
-    name: z.string().min(2, 'Name must have at least 2 characters').openapi({ example: 'John Doe' }),
-    email: z.string().email('Invalid email address').openapi({ example: 'john@example.com' }),
-    password: z.string().min(8, 'Password must be at least 8 characters').openapi({ example: 'SecureP@ss123' }),
+    idToken: z.string().optional().openapi({
+      description: 'Google ID Token from client SDK (iOS/Android/Web One Tap)',
+      example: 'eyJhbGciOiJSUzI1NiIsImtpZCI...',
+    }),
+    accessToken: z.string().optional().openapi({
+      description: 'Google OAuth Access Token',
+      example: 'ya29.a0AfH6SMC...',
+    }),
+    code: z.string().optional().openapi({
+      description: 'Google Authorization Code from OAuth consent redirect',
+      example: '4/0AX4XfWh...',
+    }),
   })
-  .openapi('RegisterRequest');
+  .openapi('GoogleAuthRequest');
 
-export const LoginRequestSchema = z
+export const GoogleAuthUrlResponseSchema = z
   .object({
-    email: z.string().email('Invalid email address').openapi({ example: 'john@example.com' }),
-    password: z.string().min(1, 'Password is required').openapi({ example: 'SecureP@ss123' }),
+    success: z.boolean().openapi({ example: true }),
+    data: z.object({
+      url: z.string().openapi({
+        example: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=...&response_type=code',
+      }),
+    }),
   })
-  .openapi('LoginRequest');
+  .openapi('GoogleAuthUrlResponse');
 
 export const RefreshTokenRequestSchema = z
   .object({
-    refreshToken: z.string().min(1, 'Refresh token is required').openapi({ example: 'eyJhbGciOiJIUzI1NiIsIn...' }),
+    refreshToken: z.string().min(1, 'Refresh token is required').openapi({
+      example: 'eyJhbGciOiJIUzI1NiIsIn...',
+    }),
   })
   .openapi('RefreshTokenRequest');
-
-export const ChangePasswordRequestSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Current password is required').openapi({ example: 'SecureP@ss123' }),
-    newPassword: z.string().min(8, 'New password must be at least 8 characters').openapi({ example: 'NewSecureP@ss456' }),
-  })
-  .openapi('ChangePasswordRequest');
 
 export const UserDto = z
   .object({
     id: z.string().uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
-    name: z.string().openapi({ example: 'John Doe' }),
-    email: z.string().email().openapi({ example: 'john@example.com' }),
+    googleId: z.string().nullable().optional().openapi({ example: '1098234789123498172' }),
+    name: z.string().openapi({ example: 'Alex Morgan' }),
+    email: z.string().email().openapi({ example: 'alex@gmail.com' }),
+    avatarUrl: z.string().nullable().optional().openapi({ example: 'https://lh3.googleusercontent.com/a/...' }),
     createdAt: z.string().openapi({ example: '2026-11-22T14:00:00.000Z' }),
     updatedAt: z.string().openapi({ example: '2026-11-22T14:00:00.000Z' }),
   })

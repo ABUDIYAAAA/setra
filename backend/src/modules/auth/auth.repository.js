@@ -4,7 +4,18 @@ import { users } from '../../db/schema/users.js';
 import { refreshTokens } from '../../db/schema/refreshTokens.js';
 
 export class AuthRepository {
+  async findUserByGoogleId(googleId) {
+    if (!googleId) return null;
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.googleId, googleId))
+      .limit(1);
+    return user || null;
+  }
+
   async findUserByEmail(email) {
+    if (!email) return null;
     const [user] = await db
       .select()
       .from(users)
@@ -22,25 +33,28 @@ export class AuthRepository {
     return user || null;
   }
 
-  async createUser({ name, email, passwordHash }) {
+  async createUser({ googleId, name, email, avatarUrl }) {
     const [user] = await db
       .insert(users)
       .values({
+        googleId,
         name,
         email: email.toLowerCase(),
-        passwordHash,
+        avatarUrl,
       })
       .returning();
     return user;
   }
 
-  async updateUserPassword(id, passwordHash) {
+  async updateUser(id, { googleId, name, avatarUrl }) {
+    const updateData = { updatedAt: new Date() };
+    if (googleId !== undefined) updateData.googleId = googleId;
+    if (name !== undefined) updateData.name = name;
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+
     const [updatedUser] = await db
       .update(users)
-      .set({
-        passwordHash,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
     return updatedUser;

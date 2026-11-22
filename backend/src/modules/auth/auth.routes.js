@@ -2,10 +2,9 @@ import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
 import { authHandlers } from './auth.handlers.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 import {
-  RegisterRequestSchema,
-  LoginRequestSchema,
+  GoogleAuthRequestSchema,
+  GoogleAuthUrlResponseSchema,
   RefreshTokenRequestSchema,
-  ChangePasswordRequestSchema,
   AuthResponseSchema,
   TokenRefreshResponseSchema,
   UserProfileResponseSchema,
@@ -15,25 +14,43 @@ import {
 
 export const authRouter = new OpenAPIHono();
 
-// Routes definitions
-export const registerRoute = createRoute({
+export const googleUrlRoute = createRoute({
+  method: 'get',
+  path: '/google/url',
+  summary: 'Get Google OAuth Consent URL',
+  description: 'Returns the Google OAuth 2.0 authorization URL to redirect users for consent.',
+  tags: ['Authentication'],
+  responses: {
+    200: {
+      description: 'Google OAuth consent URL',
+      content: {
+        'application/json': {
+          schema: GoogleAuthUrlResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+export const googleAuthRoute = createRoute({
   method: 'post',
-  path: '/register',
-  summary: 'Register a new user account',
-  description: 'Registers a new user with name, email, and password, returning tokens and user profile.',
+  path: '/google',
+  summary: 'Authenticate with Google OAuth',
+  description:
+    'Sign in or sign up using Google OAuth. Accepts Google ID token (iOS/Android/Web), Access token, or Authorization code.',
   tags: ['Authentication'],
   request: {
     body: {
       content: {
         'application/json': {
-          schema: RegisterRequestSchema,
+          schema: GoogleAuthRequestSchema,
         },
       },
     },
   },
   responses: {
-    201: {
-      description: 'User registered successfully',
+    200: {
+      description: 'Authenticated successfully with Google',
       content: {
         'application/json': {
           schema: AuthResponseSchema,
@@ -41,42 +58,15 @@ export const registerRoute = createRoute({
       },
     },
     400: {
-      description: 'Bad Request / Email already exists',
+      description: 'Bad Request / Missing parameters',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
         },
       },
     },
-  },
-});
-
-export const loginRoute = createRoute({
-  method: 'post',
-  path: '/login',
-  summary: 'Login with credentials',
-  description: 'Authenticates user using email and password, issuing access and refresh tokens.',
-  tags: ['Authentication'],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: LoginRequestSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Logged in successfully',
-      content: {
-        'application/json': {
-          schema: AuthResponseSchema,
-        },
-      },
-    },
     401: {
-      description: 'Invalid credentials',
+      description: 'Google authentication failed / Invalid token',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -152,7 +142,7 @@ export const meRoute = createRoute({
   method: 'get',
   path: '/me',
   summary: 'Get current user profile',
-  description: 'Returns profile details of the authenticated user identified by the Bearer access token.',
+  description: 'Returns profile details of the authenticated Google user identified by the Bearer access token.',
   tags: ['Authentication'],
   security: [{ BearerAuth: [] }],
   responses: {
@@ -175,59 +165,12 @@ export const meRoute = createRoute({
   },
 });
 
-export const changePasswordRoute = createRoute({
-  method: 'post',
-  path: '/change-password',
-  summary: 'Change password',
-  description: 'Updates the user password and revokes all active refresh tokens.',
-  tags: ['Authentication'],
-  security: [{ BearerAuth: [] }],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: ChangePasswordRequestSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Password changed successfully',
-      content: {
-        'application/json': {
-          schema: MessageResponseSchema,
-        },
-      },
-    },
-    400: {
-      description: 'Incorrect current password or invalid input',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - invalid or missing Bearer token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-  },
-});
-
 // Register routes
-authRouter.openapi(registerRoute, authHandlers.register);
-authRouter.openapi(loginRoute, authHandlers.login);
+authRouter.openapi(googleUrlRoute, authHandlers.getGoogleUrl);
+authRouter.openapi(googleAuthRoute, authHandlers.googleAuth);
 authRouter.openapi(refreshRoute, authHandlers.refresh);
 authRouter.openapi(logoutRoute, authHandlers.logout);
 
-// Protected routes with authMiddleware
+// Protected routes
 authRouter.use('/me', authMiddleware);
 authRouter.openapi(meRoute, authHandlers.getMe);
-
-authRouter.use('/change-password', authMiddleware);
-authRouter.openapi(changePasswordRoute, authHandlers.changePassword);
