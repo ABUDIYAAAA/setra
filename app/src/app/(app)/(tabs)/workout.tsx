@@ -14,9 +14,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useRoutines, useDuplicateRoutine } from '@/hooks/useRoutines';
+import { useRoutines, useDuplicateRoutine, useDeleteRoutine } from '@/hooks/useRoutines';
 import { useRoutineDraft } from '@/context/RoutineDraftContext';
 import { RoutineSummary } from '@/api/routines.api';
+import { RoutineActionSheet } from '@/components/RoutineActionSheet';
 
 export default function WorkoutScreen() {
   const router = useRouter();
@@ -24,6 +25,9 @@ export default function WorkoutScreen() {
   const [search, setSearch] = useState('');
   const { data: routines, isLoading, isError, refetch, isRefetching } = useRoutines();
   const duplicateRoutineMutation = useDuplicateRoutine();
+  const deleteRoutineMutation = useDeleteRoutine();
+
+  const [activeActionRoutine, setActiveActionRoutine] = useState<RoutineSummary | null>(null);
 
   // Client-side filtering across routine title, description, and exercise names
   const filteredRoutines = useMemo(() => {
@@ -54,6 +58,27 @@ export default function WorkoutScreen() {
     }
   };
 
+  const handleDelete = (id: string, title: string) => {
+    Alert.alert(
+      'Delete Routine?',
+      `Are you sure you want to delete "${title}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteRoutineMutation.mutateAsync(id);
+            } catch (err: any) {
+              Alert.alert('Delete Failed', err?.message || 'Could not delete routine');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderRoutineCard = ({ item }: { item: RoutineSummary }) => (
     <TouchableOpacity
       style={styles.card}
@@ -70,28 +95,17 @@ export default function WorkoutScreen() {
           ) : null}
         </View>
 
+        {/* Three-dot menu button */}
         <TouchableOpacity
           style={styles.actionIconBtn}
           onPress={(e) => {
             e.stopPropagation();
-            handleDuplicate(item.id, item.title);
+            setActiveActionRoutine(item);
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="copy-outline" size={16} color="#94A3B8" />
+          <Ionicons name="ellipsis-horizontal" size={18} color="#94A3B8" />
         </TouchableOpacity>
-      </View>
-
-      {/* Meta indicators */}
-      <View style={styles.metaRow}>
-        <View style={styles.metaBadge}>
-          <Ionicons name="barbell-outline" size={13} color="#818CF8" style={{ marginRight: 4 }} />
-          <Text style={styles.metaBadgeText}>{item.exerciseCount} exercises</Text>
-        </View>
-        <View style={styles.metaBadge}>
-          <Ionicons name="repeat-outline" size={13} color="#818CF8" style={{ marginRight: 4 }} />
-          <Text style={styles.metaBadgeText}>{item.totalSetsCount} sets</Text>
-        </View>
       </View>
 
       {/* Exercise preview pills */}
@@ -218,6 +232,31 @@ export default function WorkoutScreen() {
           }
         />
       )}
+
+      {/* Three-Dot Bottom Action Sheet */}
+      <RoutineActionSheet
+        visible={Boolean(activeActionRoutine)}
+        onClose={() => setActiveActionRoutine(null)}
+        routineTitle={activeActionRoutine?.title || 'Routine'}
+        onEdit={() => {
+          if (activeActionRoutine) {
+            router.push({
+              pathname: '/new-routine',
+              params: { id: activeActionRoutine.id, edit: 'true' },
+            });
+          }
+        }}
+        onDuplicate={() => {
+          if (activeActionRoutine) {
+            handleDuplicate(activeActionRoutine.id, activeActionRoutine.title);
+          }
+        }}
+        onDelete={() => {
+          if (activeActionRoutine) {
+            handleDelete(activeActionRoutine.id, activeActionRoutine.title);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -1,6 +1,9 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { apiReference } from '@scalar/hono-api-reference';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { exerciseRouter } from './modules/exercises/exercise.routes.js';
@@ -29,6 +32,12 @@ export function createApp() {
 
   // Enable CORS for all routes and clients
   app.use('*', cors());
+
+  // Serve Exercise Images statically
+  const staticRoot = fs.existsSync(path.resolve(process.cwd(), 'images'))
+    ? './'
+    : './backend/';
+  app.use('/images/*', serveStatic({ root: staticRoot }));
 
   // Global Error Handler
   app.onError(errorHandler);

@@ -11,9 +11,11 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useExercises } from '@/hooks/useExercises';
 import { Exercise } from '@/api/exercises.api';
+import { ExerciseThumbnail } from '@/components/ExerciseThumbnail';
 
 const EQUIPMENT_FILTERS = [
   { label: 'All', value: undefined },
@@ -25,6 +27,7 @@ const EQUIPMENT_FILTERS = [
 ];
 
 export default function ExercisesScreen() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [selectedEquipment, setSelectedEquipment] = useState<string | undefined>(undefined);
 
@@ -38,22 +41,31 @@ export default function ExercisesScreen() {
   const exercises = data?.data || [];
 
   const renderExercise = ({ item }: { item: Exercise }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.exerciseName}>{item.name}</Text>
-        <View style={styles.tagBadge}>
-          <Text style={styles.tagBadgeText}>{item.equipment}</Text>
-        </View>
-      </View>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => router.push({ pathname: '/exercise-details', params: { id: item.id } })}
+      activeOpacity={0.75}
+    >
+      <View style={styles.cardTopRow}>
+        <ExerciseThumbnail images={item.images} size={46} />
+        <View style={styles.cardMainInfo}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.exerciseName}>{item.name}</Text>
+            <View style={styles.tagBadge}>
+              <Text style={styles.tagBadgeText}>{item.equipment}</Text>
+            </View>
+          </View>
 
-      <View style={styles.metaRow}>
-        <View style={styles.metaChip}>
-          <Text style={styles.metaChipText}>{item.bodyPart.toUpperCase()}</Text>
+          <View style={styles.metaRow}>
+            <View style={styles.metaChip}>
+              <Text style={styles.metaChipText}>{item.bodyPart.toUpperCase()}</Text>
+            </View>
+            <Text style={styles.metaDot}>•</Text>
+            <Text style={styles.metaText}>{item.category}</Text>
+            <Text style={styles.metaDot}>•</Text>
+            <Text style={styles.metaText}>{item.difficulty}</Text>
+          </View>
         </View>
-        <Text style={styles.metaDot}>•</Text>
-        <Text style={styles.metaText}>{item.category}</Text>
-        <Text style={styles.metaDot}>•</Text>
-        <Text style={styles.metaText}>{item.difficulty}</Text>
       </View>
 
       {item.instructions && item.instructions.length > 0 && (
@@ -61,7 +73,7 @@ export default function ExercisesScreen() {
           {item.instructions[0]}
         </Text>
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -212,7 +224,16 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
-    gap: 6,
+    gap: 10,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cardMainInfo: {
+    flex: 1,
+    gap: 4,
   },
   cardHeader: {
     flexDirection: 'row',

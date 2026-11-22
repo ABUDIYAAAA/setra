@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useExercises } from '@/hooks/useExercises';
 import { useRoutineDraft } from '@/context/RoutineDraftContext';
 import { Exercise } from '@/api/exercises.api';
+import { ExerciseThumbnail } from '@/components/ExerciseThumbnail';
 
 export default function SelectExercisesScreen() {
   const router = useRouter();
@@ -62,6 +63,8 @@ export default function SelectExercisesScreen() {
         onPress={() => toggleSelect(item)}
         activeOpacity={0.7}
       >
+        <ExerciseThumbnail images={item.images} size={42} />
+
         <View style={styles.itemInfo}>
           <Text style={styles.itemName}>{item.name}</Text>
           <View style={styles.metaRow}>
@@ -70,6 +73,18 @@ export default function SelectExercisesScreen() {
             <Text style={styles.metaText}>{item.equipment}</Text>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.infoBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            router.push({ pathname: '/exercise-details', params: { id: item.id } });
+          }}
+          hitSlop={8}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="information-circle-outline" size={22} color="#818CF8" />
+        </TouchableOpacity>
 
         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
           {isSelected ? (
@@ -253,6 +268,7 @@ const styles = StyleSheet.create({
   },
   itemInfo: {
     flex: 1,
+    marginLeft: 12,
     marginRight: 12,
   },
   itemName: {
@@ -279,6 +295,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94A3B8',
     textTransform: 'capitalize',
+  },
+  infoBtn: {
+    padding: 6,
+    marginRight: 6,
   },
   checkbox: {
     width: 24,

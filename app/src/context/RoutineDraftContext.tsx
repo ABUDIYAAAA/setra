@@ -16,6 +16,7 @@ export interface DraftExercise {
   name: string;
   bodyPart: string;
   equipment: string;
+  images?: any;
   notes?: string;
   restTimerSeconds?: number | null;
   sets: DraftSet[];
@@ -29,6 +30,7 @@ interface RoutineDraftContextType {
   loadRoutineForEdit: (routine: RoutineDetail) => void;
   addExercisesFromCatalog: (catalogExercises: Exercise[]) => void;
   removeExercise: (index: number) => void;
+  setRestTimer: (exerciseIndex: number, seconds: number | null) => void;
   addSet: (exerciseIndex: number) => void;
   removeSet: (exerciseIndex: number, setIndex: number) => void;
   updateSet: (exerciseIndex: number, setIndex: number, updates: Partial<DraftSet>) => void;
@@ -60,6 +62,7 @@ export const RoutineDraftProvider: React.FC<{ children: React.ReactNode }> = ({ 
       name: ex.name,
       bodyPart: ex.bodyPart,
       equipment: ex.equipment,
+      images: ex.images || null,
       notes: ex.notes || '',
       restTimerSeconds: ex.restTimerSeconds ?? null,
       sets: ex.sets.map((s, idx) => ({
@@ -84,6 +87,7 @@ export const RoutineDraftProvider: React.FC<{ children: React.ReactNode }> = ({ 
         name: catalogEx.name,
         bodyPart: catalogEx.bodyPart,
         equipment: catalogEx.equipment,
+        images: catalogEx.images || null,
         notes: '',
         restTimerSeconds: null,
         sets: [
@@ -102,6 +106,19 @@ export const RoutineDraftProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const removeExercise = (index: number) => {
     setExercises((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const setRestTimer = (exerciseIndex: number, seconds: number | null) => {
+    setExercises((prev) => {
+      const updated = [...prev];
+      if (updated[exerciseIndex]) {
+        updated[exerciseIndex] = {
+          ...updated[exerciseIndex],
+          restTimerSeconds: seconds,
+        };
+      }
+      return updated;
+    });
   };
 
   const addSet = (exerciseIndex: number) => {
@@ -173,6 +190,7 @@ export const RoutineDraftProvider: React.FC<{ children: React.ReactNode }> = ({ 
         loadRoutineForEdit,
         addExercisesFromCatalog,
         removeExercise,
+        setRestTimer,
         addSet,
         removeSet,
         updateSet,

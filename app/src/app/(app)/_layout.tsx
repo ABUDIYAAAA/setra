@@ -32,6 +32,13 @@ export default function AppLayout() {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="exercise-details"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
     </Stack>
   );
 }
