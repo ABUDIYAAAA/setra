@@ -1,6 +1,6 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { NotFoundError } from '../../utils/errors.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import { NotFoundError } from "../../utils/errors.js";
 
 export class ExerciseService {
   constructor() {
@@ -12,8 +12,8 @@ export class ExerciseService {
   async loadExercises() {
     if (this.isLoaded) return;
     try {
-      const filePath = path.resolve(process.cwd(), 'exercises.json');
-      const fileData = await fs.readFile(filePath, 'utf-8');
+      const filePath = path.resolve(process.cwd(), "exercises.json");
+      const fileData = await fs.readFile(filePath, "utf-8");
       const parsed = JSON.parse(fileData);
       const rawList = parsed.exercises || [];
 
@@ -21,12 +21,12 @@ export class ExerciseService {
         id: ex.id,
         name: ex.name_en,
         description: ex.description_en || null,
-        category: ex.category || 'strength',
+        category: ex.category || "strength",
         bodyPart: ex.body_part,
-        equipment: ex.equipment || (ex.is_bodyweight ? 'bodyweight' : 'none'),
+        equipment: ex.equipment || (ex.is_bodyweight ? "bodyweight" : "none"),
         forceType: ex.force_type || null,
         mechanic: ex.mechanic || null,
-        difficulty: ex.difficulty || 'beginner',
+        difficulty: ex.difficulty || "beginner",
         primaryMuscles: ex.primary_muscles || [],
         secondaryMuscles: ex.secondary_muscles || [],
         instructions: ex.instructions_en || [],
@@ -66,9 +66,11 @@ export class ExerciseService {
       };
 
       this.isLoaded = true;
-      console.log(`💪 Loaded ${this.exercises.length} exercises into memory at runtime.`);
+      console.log(
+        ` Loaded ${this.exercises.length} exercises into memory at runtime.`,
+      );
     } catch (err) {
-      console.error('❌ Failed to load exercises.json at runtime:', err);
+      console.error("❌ Failed to load exercises.json at runtime:", err);
     }
   }
 
@@ -96,7 +98,7 @@ export class ExerciseService {
           e.name.toLowerCase().includes(term) ||
           e.id.toLowerCase().includes(term) ||
           e.bodyPart.toLowerCase().includes(term) ||
-          e.equipment.toLowerCase().includes(term)
+          e.equipment.toLowerCase().includes(term),
       );
     }
 
@@ -122,11 +124,13 @@ export class ExerciseService {
 
     if (mechanic) {
       const mech = mechanic.toLowerCase();
-      filtered = filtered.filter((e) => e.mechanic && e.mechanic.toLowerCase() === mech);
+      filtered = filtered.filter(
+        (e) => e.mechanic && e.mechanic.toLowerCase() === mech,
+      );
     }
 
     if (isBodyweight !== undefined) {
-      const isBw = isBodyweight === 'true' || isBodyweight === true;
+      const isBw = isBodyweight === "true" || isBodyweight === true;
       filtered = filtered.filter((e) => e.isBodyweight === isBw);
     }
 
@@ -148,7 +152,10 @@ export class ExerciseService {
     await this.loadExercises();
     const exercise = this.exercises.find((e) => e.id === id);
     if (!exercise) {
-      throw new NotFoundError(`Exercise with ID '${id}' not found`, 'EXERCISE_NOT_FOUND');
+      throw new NotFoundError(
+        `Exercise with ID '${id}' not found`,
+        "EXERCISE_NOT_FOUND",
+      );
     }
     return exercise;
   }
