@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { apiReference } from '@scalar/hono-api-reference';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { exerciseRouter } from './modules/exercises/exercise.routes.js';
+import { routineRouter } from './modules/routines/routine.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { ApiResponse } from './utils/apiResponse.js';
 
@@ -34,6 +35,9 @@ export function createApp() {
 
   // Mount Exercises Module
   app.route('/api/v1/exercises', exerciseRouter);
+
+  // Mount Routines Module
+  app.route('/api/v1/routines', routineRouter);
 
   // OpenAPI Specification endpoint
   app.doc('/openapi.json', {

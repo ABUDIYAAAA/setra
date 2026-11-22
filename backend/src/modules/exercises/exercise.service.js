@@ -12,7 +12,12 @@ export class ExerciseService {
   async loadExercises() {
     if (this.isLoaded) return;
     try {
-      const filePath = path.resolve(process.cwd(), "exercises.json");
+      let filePath = path.resolve(process.cwd(), "exercises.json");
+      try {
+        await fs.access(filePath);
+      } catch {
+        filePath = path.resolve(process.cwd(), "backend", "exercises.json");
+      }
       const fileData = await fs.readFile(filePath, "utf-8");
       const parsed = JSON.parse(fileData);
       const rawList = parsed.exercises || [];
