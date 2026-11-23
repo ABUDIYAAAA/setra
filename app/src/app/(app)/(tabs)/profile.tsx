@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 
@@ -50,12 +50,13 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 16,
+    paddingBottom: 110,
   },
   header: {
     paddingVertical: 12,

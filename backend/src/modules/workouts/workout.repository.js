@@ -92,7 +92,52 @@ export class WorkoutRepository {
       .from(workouts)
       .where(condition);
 
-    return { items, total };
+    if (items.length === 0) {
+      return { items: [], total };
+    }
+
+    const workoutIds = items.map((w) => w.id);
+    const exercises = await db
+      .select()
+      .from(workoutExercises)
+      .where(inArray(workoutExercises.workoutId, workoutIds))
+      .orderBy(workoutExercises.orderIndex);
+
+    const exerciseIds = exercises.map((e) => e.id);
+    let sets = [];
+    if (exerciseIds.length > 0) {
+      sets = await db
+        .select()
+        .from(workoutSets)
+        .where(inArray(workoutSets.workoutExerciseId, exerciseIds))
+        .orderBy(workoutSets.setNumber);
+    }
+
+    const setsByExerciseId = new Map();
+    for (const s of sets) {
+      if (!setsByExerciseId.has(s.workoutExerciseId)) {
+        setsByExerciseId.set(s.workoutExerciseId, []);
+      }
+      setsByExerciseId.get(s.workoutExerciseId).push(s);
+    }
+
+    const exercisesByWorkoutId = new Map();
+    for (const e of exercises) {
+      if (!exercisesByWorkoutId.has(e.workoutId)) {
+        exercisesByWorkoutId.set(e.workoutId, []);
+      }
+      exercisesByWorkoutId.get(e.workoutId).push({
+        ...e,
+        sets: setsByExerciseId.get(e.id) || [],
+      });
+    }
+
+    const populatedItems = items.map((w) => ({
+      ...w,
+      exercises: exercisesByWorkoutId.get(w.id) || [],
+    }));
+
+    return { items: populatedItems, total };
   }
 
   async updateWorkout(id, userId, updates) {

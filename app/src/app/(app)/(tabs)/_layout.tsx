@@ -1,27 +1,50 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { GlassView } from 'expo-glass-effect';
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#080A10',
-          borderTopColor: 'rgba(255, 255, 255, 0.08)',
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 8,
-        },
         tabBarActiveTintColor: '#FFFFFF',
-        tabBarInactiveTintColor: '#64748B',
+        tabBarInactiveTintColor: '#71717A',
+        tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginTop: -2,
         },
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          elevation: 0,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: 'rgba(255, 255, 255, 0.12)',
+          backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0, 0, 0, 0.94)',
+          height: Platform.OS === 'ios' ? 88 : 68,
+          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+          paddingTop: 8,
+        },
+        tabBarBackground: () =>
+          Platform.OS === 'ios' ? (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme="dark"
+              style={StyleSheet.absoluteFill}
+            />
+          ) : (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: 'rgba(0, 0, 0, 0.94)' },
+              ]}
+            />
+          ),
       }}
     >
       {/* 1. Home (Leftmost) */}
@@ -33,7 +56,7 @@ export default function TabsLayout() {
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
               size={22}
-              color={focused ? '#FFFFFF' : '#64748B'}
+              color={focused ? '#FFFFFF' : '#71717A'}
             />
           ),
         }}
@@ -48,7 +71,7 @@ export default function TabsLayout() {
             <Ionicons
               name={focused ? 'barbell' : 'barbell-outline'}
               size={23}
-              color={focused ? '#FFFFFF' : '#64748B'}
+              color={focused ? '#FFFFFF' : '#71717A'}
             />
           ),
         }}
@@ -63,7 +86,7 @@ export default function TabsLayout() {
             <Ionicons
               name={focused ? 'person' : 'person-outline'}
               size={22}
-              color={focused ? '#FFFFFF' : '#64748B'}
+              color={focused ? '#FFFFFF' : '#71717A'}
             />
           ),
         }}
@@ -71,3 +94,5 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+

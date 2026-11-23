@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TextInput,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useRoutines, useDuplicateRoutine, useDeleteRoutine } from '@/hooks/useRoutines';
@@ -325,14 +325,14 @@ export default function WorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#000000',
   },
   activeBannerSection: {
     paddingHorizontal: 20,
     paddingTop: 12,
   },
   activeWorkoutBanner: {
-    backgroundColor: '#0F1522',
+    backgroundColor: '#121212',
     borderRadius: 14,
     padding: 14,
     flexDirection: 'row',
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 32,
+    paddingBottom: 110,
     gap: 12,
   },
   card: {

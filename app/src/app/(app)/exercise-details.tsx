@@ -378,7 +378,7 @@ export default function ExerciseDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#000000',
   },
   centerBox: {
     justifyContent: 'center',
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    backgroundColor: '#0D111A',
+    backgroundColor: '#0A0A0A',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -517,9 +517,9 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#0B0F17',
+    backgroundColor: '#0A0A0A',
     borderBottomWidth: 1,
-    borderBottomColor: '#161F30',
+    borderBottomColor: '#1A1A1A',
   },
   tabButton: {
     flex: 1,
@@ -556,11 +556,11 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   sectionCard: {
-    backgroundColor: '#0F1522',
+    backgroundColor: '#121212',
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: '#222222',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -621,13 +621,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   stepCard: {
-    backgroundColor: '#0F1522',
+    backgroundColor: '#121212',
     borderRadius: 12,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'flex-start',
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: '#222222',
     gap: 12,
   },
   stepNumberBadge: {
@@ -654,11 +654,11 @@ const styles = StyleSheet.create({
   emptyCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0F1522',
+    backgroundColor: '#121212',
     borderRadius: 12,
     padding: 32,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: '#222222',
   },
   emptyTitle: {
     color: '#94A3B8',
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   tipCard: {
-    backgroundColor: '#0F1522',
+    backgroundColor: '#121212',
     borderRadius: 12,
     padding: 14,
     flexDirection: 'row',

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -508,7 +508,7 @@ export default function ActiveWorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#000000',
   },
   centerBox: {
     justifyContent: 'center',
@@ -636,11 +636,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   exerciseCard: {
-    backgroundColor: '#0F1522',
+    backgroundColor: '#121212',
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: '#222222',
   },
   exerciseHeader: {
     flexDirection: 'row',
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   numericInput: {
-    backgroundColor: '#161F30',
+    backgroundColor: '#1A1A1A',
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#243047',
+    borderColor: '#2E2E2E',
   },
   inputCompleted: {
     borderColor: 'rgba(16, 185, 129, 0.3)',
@@ -739,10 +739,10 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#161F30',
+    backgroundColor: '#1A1A1A',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#2E2E2E',
     marginLeft: 6,
   },
   checkBtnCompleted: {
