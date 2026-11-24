@@ -34,6 +34,15 @@ export function useWorkoutStreaks() {
   });
 }
 
+export function useWorkoutDetail(id: string) {
+  return useQuery<WorkoutDetail>({
+    queryKey: ['workout', id],
+    queryFn: () => workoutsApi.getById(id),
+    enabled: Boolean(id),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useStartWorkout() {
   const queryClient = useQueryClient();
   return useMutation({

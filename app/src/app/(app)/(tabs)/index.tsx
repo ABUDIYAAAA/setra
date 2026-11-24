@@ -99,16 +99,13 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Welcome Header */}
+        {/* Top Header: Name and Streak */}
         <View style={styles.header}>
-          <View style={styles.headerTextGroup}>
-            <Text style={styles.headerGreeting}>Welcome back,</Text>
-            <Text style={styles.headerTitle}>{firstName}</Text>
-          </View>
+          <Text style={styles.headerTitle}>{firstName}</Text>
           {streaks && streaks.currentDayStreak > 0 && (
-            <View style={styles.streakBadge}>
-              <Text style={styles.streakBadgeEmoji}>🔥</Text>
-              <Text style={styles.streakBadgeText}>{streaks.currentDayStreak}d Streak</Text>
+            <View style={styles.streakRow}>
+              <Text style={styles.streakNumber}>{streaks.currentDayStreak}</Text>
+              <Ionicons name="flame" size={20} color="#F97316" />
             </View>
           )}
         </View>
@@ -134,28 +131,6 @@ export default function HomeScreen() {
               <Ionicons name="play" size={16} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
-        )}
-
-        {/* Weekly Streaks & Stats Card */}
-        {streaks && (
-          <View style={styles.statsCard}>
-            <View style={styles.statCol}>
-              <Text style={styles.statValue}>{streaks.totalWorkouts || 0}</Text>
-              <Text style={styles.statLabel}>Workouts</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statCol}>
-              <Text style={styles.statValue}>
-                {streaks.totalVolumeKg ? `${Math.round(streaks.totalVolumeKg).toLocaleString()} kg` : '0 kg'}
-              </Text>
-              <Text style={styles.statLabel}>Volume</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statCol}>
-              <Text style={styles.statValue}>{formatDuration(streaks.totalDurationSeconds)}</Text>
-              <Text style={styles.statLabel}>Time</Text>
-            </View>
-          </View>
         )}
 
         {/* Workout History Header */}
@@ -201,10 +176,10 @@ export default function HomeScreen() {
                 key={workout.id}
                 workout={workout}
                 exercisesMap={exercisesMap}
-                onExercisePress={(exerciseId) =>
+                onWorkoutPress={(workoutId) =>
                   router.push({
-                    pathname: '/(app)/exercise-details',
-                    params: { id: exerciseId },
+                    pathname: '/(app)/workout-detail',
+                    params: { id: workoutId },
                   })
                 }
               />
@@ -220,11 +195,11 @@ export default function HomeScreen() {
 function WorkoutHistoryCard({
   workout,
   exercisesMap,
-  onExercisePress,
+  onWorkoutPress,
 }: {
   workout: WorkoutDetail;
   exercisesMap: Map<string, any>;
-  onExercisePress: (exerciseId: string) => void;
+  onWorkoutPress: (workoutId: string) => void;
 }) {
   const exercises = workout.exercises || [];
 
@@ -235,7 +210,11 @@ function WorkoutHistoryCard({
   }, 0);
 
   return (
-    <View style={styles.historyCard}>
+    <TouchableOpacity
+      style={styles.historyCard}
+      onPress={() => onWorkoutPress(workout.id)}
+      activeOpacity={0.8}
+    >
       {/* Card Header */}
       <View style={styles.cardTopRow}>
         <View style={styles.cardTitleCol}>
@@ -244,7 +223,8 @@ function WorkoutHistoryCard({
         </View>
         {prCount > 0 && (
           <View style={styles.prBadge}>
-            <Text style={styles.prBadgeText}>🏆 {prCount} PR{prCount > 1 ? 's' : ''}</Text>
+            <Ionicons name="trophy" size={12} color="#FACC15" style={{ marginRight: 4 }} />
+            <Text style={styles.prBadgeText}>{prCount} PR{prCount > 1 ? 's' : ''}</Text>
           </View>
         )}
       </View>
@@ -294,7 +274,7 @@ function WorkoutHistoryCard({
               <TouchableOpacity
                 key={item.id}
                 style={styles.exerciseRow}
-                onPress={() => onExercisePress(item.exerciseId)}
+                onPress={() => onWorkoutPress(workout.id)}
                 activeOpacity={0.7}
               >
                 {/* Exercise Small Circle Image / Icon */}
@@ -340,7 +320,7 @@ function WorkoutHistoryCard({
           </Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -361,40 +341,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 16,
   },
-  headerTextGroup: {
-    flex: 1,
-  },
-  headerGreeting: {
-    fontSize: 13,
-    color: '#71717A',
-    fontWeight: '500',
-    letterSpacing: 0.3,
-  },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: -0.5,
-    marginTop: 2,
+    letterSpacing: -0.6,
   },
-  streakBadge: {
+  streakRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: 4,
+    backgroundColor: '#141414',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-    gap: 4,
+    borderColor: '#262626',
   },
-  streakBadgeEmoji: {
-    fontSize: 14,
-  },
-  streakBadgeText: {
-    color: '#F87171',
-    fontSize: 12,
-    fontWeight: '700',
+  streakNumber: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
   },
   activeWorkoutBanner: {
     backgroundColor: '#121212',
@@ -446,39 +413,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
-  },
-  statsCard: {
-    backgroundColor: '#121212',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#222222',
-    marginBottom: 24,
-  },
-  statCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  statLabel: {
-    color: '#71717A',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 3,
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#222222',
   },
   sectionHeader: {
     flexDirection: 'row',

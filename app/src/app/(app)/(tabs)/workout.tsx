@@ -222,7 +222,7 @@ export default function WorkoutScreen() {
           onPress={handleStartEmptyWorkout}
           activeOpacity={0.85}
         >
-          <Ionicons name="flash" size={18} color="#818CF8" style={{ marginRight: 6 }} />
+          <Ionicons name="flash" size={18} color="#14B8A6" style={{ marginRight: 6 }} />
           <Text style={styles.quickStartText}>Quick Workout</Text>
         </TouchableOpacity>
 
@@ -412,17 +412,17 @@ const styles = StyleSheet.create({
   },
   quickStartButton: {
     flex: 1,
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    backgroundColor: 'rgba(20, 184, 166, 0.14)',
     height: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderColor: 'rgba(20, 184, 166, 0.35)',
   },
   quickStartText: {
-    color: '#A5B4FC',
+    color: '#14B8A6',
     fontSize: 14,
     fontWeight: '700',
   },

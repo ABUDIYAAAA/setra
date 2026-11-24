@@ -40,6 +40,13 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="workout-detail"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
         name="active-workout"
         options={{
           headerShown: false,
