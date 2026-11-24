@@ -1,13 +1,12 @@
-import { pgTable, uuid, text, varchar, timestamp } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-export const users = pgTable('users', {
-  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
-  googleId: varchar('google_id', { length: 255 }).unique(),
+export const users = sqliteTable('users', {
+  id: text('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
+  googleId: text('google_id').unique(),
   name: text('name').notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  email: text('email').notNull().unique(),
   avatarUrl: text('avatar_url'),
   passwordHash: text('password_hash'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()).notNull(),
 });
