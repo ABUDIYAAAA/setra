@@ -88,7 +88,7 @@ export class WorkoutRepository {
       .offset(offset);
 
     const [{ total }] = await db
-      .select({ total: sql`CAST(count(*) AS INTEGER)` })
+      .select({ total: sql`count(*)::int` })
       .from(workouts)
       .where(condition);
 

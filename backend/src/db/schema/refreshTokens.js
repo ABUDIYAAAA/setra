@@ -1,11 +1,12 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { users } from './users.js';
 
-export const refreshTokens = sqliteTable('refresh_tokens', {
-  id: text('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+export const refreshTokens = pgTable('refresh_tokens', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   tokenHash: text('token_hash').notNull(),
-  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
-  revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });

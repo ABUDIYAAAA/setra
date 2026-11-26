@@ -1,4 +1,4 @@
-import { eq, like, and, sql, asc, or } from 'drizzle-orm';
+import { eq, ilike, and, sql, asc, or } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { exercises } from '../../db/schema/exercises.js';
 
@@ -15,10 +15,10 @@ export class ExerciseRepository {
       const term = `%${search.trim()}%`;
       conditions.push(
         or(
-          like(exercises.name, term),
-          like(exercises.id, term),
-          like(exercises.bodyPart, term),
-          like(exercises.equipment, term)
+          ilike(exercises.name, term),
+          ilike(exercises.id, term),
+          ilike(exercises.bodyPart, term),
+          ilike(exercises.equipment, term)
         )
       );
     }
